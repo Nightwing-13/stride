@@ -1,0 +1,16 @@
+{
+  "name": "Stride",
+  "short_name": "Stride",
+  "description": "Training programs, workouts, runs and meals in one place.",
+  "start_url": "./#/feed",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#111214",
+  "theme_color": "#111214",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

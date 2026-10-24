@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111214">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stride">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Stride</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script>
+  // Program/recipe content only exists as local files on the laptop (it's never published);
+  // everywhere else it's downloaded from private cloud storage after sign-in.
+  if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname))
+    document.write('<script src="programs-data.js"><\/script><script src="recipes-data.js"><\/script>');
+</script>
+<style>
+/* Iron theme: dark-first graphite, electric lime for actions/lifting, coral for cardio. */
+:root{
+  --bg:#111214; --card:#1b1d21; --card2:#24272d; --ink:#ecedee; --muted:#8a8f99; --line:#2a2d33;
+  --primary:#c6f135; --on-primary:#111214; --accent:#ff6b4a; --on-accent:#111214;
+  --lift:#c6f135; --lift-bg:rgba(198,241,53,.12); --good:#c6f135; --warn:#ffb547; --danger:#ff5c5c; --dot:#2f3238;
+  --radius:14px; --tabbar:64px; color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+header{position:sticky;top:0;z-index:1000;background:rgba(17,18,20,.88);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
+.bar{max-width:1040px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px}
+.logo{font-weight:800;letter-spacing:.12em;color:var(--primary);font-size:18px;text-decoration:none}
+nav{display:flex;gap:4px}
+nav a{color:var(--muted);text-decoration:none;padding:7px 12px;border-radius:999px;font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px}
+nav a svg{width:18px;height:18px}
+nav a.on{background:var(--card2);color:var(--primary)}
+nav a.rec{display:none}
+.spacer{flex:1}
+main{max-width:1040px;margin:0 auto;padding:16px}
+.grid{display:grid;grid-template-columns:280px 1fr;gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+h1,h2,h3{margin:0 0 8px;letter-spacing:-.01em} h1{font-size:26px;font-weight:800} h2{font-size:18px;font-weight:700} h3{font-size:15px;font-weight:700}
+.muted{color:var(--muted)} .small{font-size:13px}
+a{color:var(--primary)}
+button,.btn{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--card2);color:var(--ink);padding:10px 16px;border-radius:12px;cursor:pointer;text-decoration:none;display:inline-block;text-align:center;transition:transform .08s ease,background .15s ease}
+button:active,.btn:active{transform:scale(.97)}
+.primary,.liftbtn{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+button:disabled{opacity:.45;cursor:default}
+input,select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px;width:100%;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--primary)}
+input::placeholder{color:#5f646d}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center} .row>*{flex:1;min-width:120px} .row>.fit{flex:0 0 auto;min-width:0}
+.stats{display:flex;gap:22px;flex-wrap:wrap;margin:10px 0}
+.stat b{display:block;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums} .stat span{font-size:12px;color:var(--muted)}
+.feed-card .top{display:flex;justify-content:space-between;gap:8px}
+.feed-card a.title{font-weight:700;font-size:17px;color:var(--ink);text-decoration:none}
+.thumb{width:100%;height:150px;background:var(--card2);border-radius:10px;margin-top:8px}
+.thumb polyline{fill:none;stroke:var(--accent);stroke-width:3;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tabs button{padding:7px 14px;border-radius:999px;font-size:14px}
+.tabs button.on{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.streak{display:flex;gap:6px;margin-top:6px}
+.streak div{flex:1;text-align:center;font-size:11px;color:var(--muted)}
+.streak i{display:block;width:22px;height:22px;margin:0 auto 3px;border-radius:50%;background:var(--dot)}
+.streak i.on{background:var(--accent)} .streak i.lift{background:var(--lift)}
+.meter{height:8px;background:var(--dot);border-radius:4px;overflow:hidden;margin:6px 0}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:4px} .meter.lift i{background:var(--lift)} .meter.food i{background:var(--accent)} .meter.over i{background:var(--danger)}
+#map{height:340px;border-radius:10px}
+.leaflet-container{background:var(--card2)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.splitbar{height:10px;background:var(--accent);border-radius:3px;opacity:.85}
+.log-week{display:grid;grid-template-columns:90px repeat(7,1fr) 70px;align-items:center;gap:4px;padding:6px 0;border-bottom:1px solid var(--line)}
+.log-week.head{font-size:12px;color:var(--muted)}
+.bubble{border-radius:50%;background:var(--accent);opacity:.9;margin:auto} .bubble.lift{background:var(--lift)}
+.timer{font-size:56px;font-weight:800;font-variant-numeric:tabular-nums;text-align:center}
+.big{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;margin:12px 0}
+.big b{font-size:24px;display:block}
+.comment{border-top:1px solid var(--line);padding:8px 0}
+.kudos.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.empty{text-align:center;padding:40px 16px}
+.err{color:var(--danger)}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--card2);color:var(--muted);white-space:nowrap}
+.pill.lift{background:var(--lift-bg);color:var(--lift)}
+.pill.good{background:var(--lift-bg);color:var(--good)} .pill.warn{background:rgba(255,181,71,.14);color:var(--warn)} .pill.accent{background:rgba(255,107,74,.14);color:var(--accent)}
+.banner{background:var(--lift-bg);color:var(--lift);border-radius:10px;padding:9px 12px;font-size:14px;margin:8px 0}
+.daylist a{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 12px;border-radius:12px;color:var(--ink);text-decoration:none;border:1px solid transparent}
+.daylist a:hover{background:var(--card2)} .daylist a.next{border-color:var(--lift);background:var(--lift-bg)}
+.daylist .rest{color:var(--muted);font-size:13px;padding:6px 12px}
+details summary{cursor:pointer;color:var(--muted);font-size:13px}
+.ex{border-top:1px solid var(--line);padding:14px 0}
+.ex:first-of-type{border-top:0}
+.setrow{display:grid;grid-template-columns:34px 1fr 72px 60px 52px 42px;gap:6px;align-items:center;padding:3px 0}
+.setrow.head{font-size:12px;color:var(--muted)}
+.setrow input{padding:8px 4px;text-align:center;font-variant-numeric:tabular-nums}
+.setrow.done{background:var(--lift-bg);border-radius:10px}
+.setrow.done input{background:transparent;border-color:transparent;color:var(--lift)}
+.setrow .tag{font-size:12px;font-weight:800;text-align:center;border-radius:8px;padding:6px 0;background:var(--card2)}
+.setrow .tag.w{color:var(--warn)}
+.check{width:40px;height:36px;padding:0;border-radius:10px}
+.check.on{background:var(--lift);border-color:var(--lift);color:var(--on-primary)}
+.sticky{position:sticky;top:calc(56px + env(safe-area-inset-top));z-index:900}
+.resttimer{display:flex;align-items:center;gap:10px;justify-content:space-between;background:var(--lift);color:var(--on-primary);border-radius:14px;padding:10px 14px;margin-bottom:12px;font-weight:600}
+.resttimer b{font-size:26px;font-variant-numeric:tabular-nums}
+.resttimer button{background:rgba(17,18,20,.12);color:var(--on-primary);border-color:transparent;padding:5px 10px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chips button{padding:6px 14px;border-radius:999px;font-size:13px}
+.chips button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.recipes{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.rcard{display:block;border:1px solid var(--line);border-radius:var(--radius);padding:13px;text-decoration:none;color:var(--ink);background:var(--card2)}
+.rcard:hover{border-color:var(--primary)}
+.rcard b{display:block;margin-bottom:4px}
+.foodrow{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.foodrow:last-child{border-bottom:0}
+.x{border:0;background:transparent;color:var(--muted);padding:4px 10px}
+ul.ing{padding-left:18px;margin:4px 0} ul.ing li{margin:3px 0} ul.ing li.h{list-style:none;margin-left:-18px;font-weight:700;margin-top:10px;color:var(--primary)}
+.steps p{margin:6px 0} .steps h4{margin:14px 0 2px;font-size:14px;color:var(--primary)}
+
+.acct{position:relative;color:var(--muted);display:flex;padding:6px}
+.acct svg{width:24px;height:24px}
+.acct i{position:absolute;right:3px;top:4px;width:9px;height:9px;border-radius:50%;border:2px solid var(--bg);background:var(--dot)}
+.acct i[data-s=ok]{background:var(--good)} .acct i[data-s=syncing]{background:var(--warn)} .acct i[data-s=error]{background:var(--danger)} .acct i[data-s=signed-out]{background:var(--muted)}
+
+/* Phone layout: iOS-style bottom tab bar, single column, safe areas. */
+@media (max-width:760px){
+  .grid{grid-template-columns:1fr !important}
+  /* backdrop-filter would make the header the containing block for the fixed tab bar */
+  header{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg)}
+  .bar{padding:10px 16px}
+  .bar .btn.primary{display:none}
+  nav{position:fixed;left:0;right:0;bottom:0;z-index:1000;justify-content:space-around;gap:0;
+      background:rgba(17,18,20,.92);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);
+      border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+  nav a{flex-direction:column;gap:2px;font-size:10.5px;padding:4px 6px;border-radius:10px;min-width:58px}
+  nav a svg{width:24px;height:24px}
+  nav a.on{background:transparent}
+  nav a.rec{display:flex}
+  nav a.rec svg{color:var(--primary)}
+  main{padding:12px 12px calc(var(--tabbar) + 24px + env(safe-area-inset-bottom))}
+  h1{font-size:24px}
+  .log-week{grid-template-columns:62px repeat(7,1fr) 52px}
+  .setrow{grid-template-columns:30px minmax(0,1fr) 64px 52px 44px 40px;gap:5px}
+  .ex > .row:first-child > select{flex:1 1 calc(100% - 50px)}
+}
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <a class="logo" href="#/feed">STRIDE</a>
+  <nav>
+    <a href="#/feed" data-nav="feed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+    <a href="#/programs" data-nav="programs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h2M20 12h2M6 7v10M18 7v10M4 9v6M20 9v6M6 12h12"/></svg>Programs</a>
+    <a href="#/record" data-nav="record" class="rec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Record</a>
+    <a href="#/meals" data-nav="meals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11h16a8 8 0 0 1-16 0zM9 7c0-1.5 1-2 1-3M13 7c0-1.5 1-2 1-3"/></svg>Meals</a>
+    <a href="#/log" data-nav="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Log</a>
+  </nav>
+  <span class="spacer"></span>
+  <a class="acct" href="#/account" aria-label="Account and sync"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><i id="syncdot" data-s="off"></i></a>
+  <a class="btn primary" href="#/record">+ Record</a>
+</div></header>
+<main id="app"></main>
+
+<script>
+// ---------- storage ----------
+const KEY = 'stride.v1';
+const DEFAULTS = {
+  athlete: 'You', weeklyGoalKm: 25, yearGoalKm: 1000, activities: [],
+  units: 'lb', program: null, live: null, food: [],
+  nutrition: { bodyweight: 180, activity: 16, goal: 'bulk', pct: 10, proteinGoal: null },
+};
+function load(){ try { const s = JSON.parse(localStorage.getItem(KEY)) || {}; return { ...DEFAULTS, ...s, nutrition: { ...DEFAULTS.nutrition, ...(s.nutrition || {}) } }; } catch { return structuredClone(DEFAULTS); } }
+let db = load();
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {} trackChanges(); scheduleSync(); }
+
+function cachedContent(name){ try { return JSON.parse(localStorage.getItem('stride.content.' + name)); } catch { return null; } }
+let PROGRAMS = window.STRIDE_PROGRAMS || cachedContent('programs') || [];
+let RECIPES = window.STRIDE_RECIPES || cachedContent('recipes') || [];
+
+// ---------- cloud sync (Supabase) ----------
+// Local-first: everything works offline from localStorage. When signed in, each record (activity, food entry,
+// settings, program progress) syncs as its own row. The most recent edit of a record wins, like Strong's sync.
+const CFG = window.STRIDE_CONFIG || {};
+const cloud = CFG.supabaseUrl && CFG.supabaseKey && window.supabase
+  ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey, { auth: { persistSession: true, autoRefreshToken: true } }) : null;
+const SKEY = 'stride.sync';
+function loadSync(){ const empty = { local:{}, synced:{}, dirty:{}, lastPull:null, lastSync:null };
+  try { return { ...empty, ...(JSON.parse(localStorage.getItem(SKEY)) || {}) }; } catch { return empty; } }
+let sync = loadSync();
+let syncState = { status: cloud ? 'signed-out' : 'off', error: null, email: null };
+function saveSync(){ try { localStorage.setItem(SKEY, JSON.stringify(sync)); } catch {} }
+function hashStr(s){ let h = 2166136261; for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36) + ':' + s.length; }
+function localRecords(){
+  const m = {};
+  for(const a of db.activities) m['activity:' + a.id] = a;
+  for(const f of db.food) m['food:' + f.id] = f;
+  m['settings:main'] = { athlete: db.athlete, weeklyGoalKm: db.weeklyGoalKm, yearGoalKm: db.yearGoalKm, units: db.units, nutrition: db.nutrition };
+  if(db.program) m['program:current'] = db.program;
+  return m;
+}
+// Stamp each record with the time it last changed on this device (compared to what was last synced).
+function trackChanges(){
+  const now = Date.now(), recs = localRecords();
+  for(const [k, v] of Object.entries(recs)){
+    const h = hashStr(JSON.stringify(v));
+    if(sync.local[k] !== h){ sync.local[k] = h; if(sync.synced[k] !== h) sync.dirty[k] = now; else delete sync.dirty[k]; }
+  }
+  for(const k of Object.keys(sync.local)) if(!(k in recs)){ delete sync.local[k]; if(sync.synced[k]) sync.dirty[k] = now; else delete sync.dirty[k]; }
+  saveSync();
+}
+function applyRemote(kind, id, data, deleted){
+  if(kind === 'activity' || kind === 'food'){
+    const list = kind === 'activity' ? 'activities' : 'food';
+    db[list] = db[list].filter(x => x.id !== id);
+    if(!deleted) db[list].push(data);
+    if(kind === 'activity') db.activities.sort((x, y) => y.startedAt - x.startedAt);
+  } else if(kind === 'settings' && !deleted){
+    Object.assign(db, { athlete: data.athlete, weeklyGoalKm: data.weeklyGoalKm, yearGoalKm: data.yearGoalKm, units: data.units,
+      nutrition: { ...DEFAULTS.nutrition, ...(data.nutrition || {}) } });
+  } else if(kind === 'program'){ db.program = deleted ? null : data; }
+}
+let syncing = false, syncTimer = null;
+function scheduleSync(delay = 2500){ if(!cloud) return; clearTimeout(syncTimer); syncTimer = setTimeout(runSync, delay); }
+async function runSync(){
+  if(!cloud || syncing || !navigator.onLine) return;
+  const { data: { session } } = await cloud.auth.getSession();
+  if(!session){ syncState.status = 'signed-out'; return; }
+  syncing = true; syncState = { status: 'syncing', error: null, email: session.user.email }; renderSyncDot();
+  let changed = false;
+  try {
+    trackChanges();
+    // 1. Pull everything the server received since our last pull (server clock, so offline edits aren't missed).
+    const firstPull = !sync.lastPull; let maxSynced = sync.lastPull;
+    for(let from = 0; ; from += 1000){
+      let q = cloud.from('stride_records').select('kind,id,data,deleted,updated_at,synced_at').order('synced_at').range(from, from + 999);
+      if(sync.lastPull) q = q.gte('synced_at', sync.lastPull);
+      const { data: rows, error } = await q; if(error) throw error;
+      for(const r of rows){
+        const k = r.kind + ':' + r.id, remoteTs = Date.parse(r.updated_at), localTs = sync.dirty[k];
+        if(!maxSynced || r.synced_at > maxSynced) maxSynced = r.synced_at;
+        if(!firstPull && localTs && localTs > remoteTs) continue; // our newer local edit wins; pushed below
+        if(sync.synced[k] && !r.deleted && sync.synced[k] === hashStr(JSON.stringify(r.data))) continue; // already have it
+        applyRemote(r.kind, r.id, r.data, r.deleted); changed = true;
+        const h = r.deleted ? null : hashStr(JSON.stringify(r.data));
+        if(h){ sync.synced[k] = sync.local[k] = h; } else { delete sync.synced[k]; delete sync.local[k]; }
+        delete sync.dirty[k];
+      }
+      if(rows.length < 1000) break;
+    }
+    if(changed) try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {}
+    trackChanges();
+    // 2. Push local edits.
+    const recs = localRecords(), entries = Object.entries(sync.dirty);
+    for(let i = 0; i < entries.length; i += 200){
+      const chunk = entries.slice(i, i + 200);
+      const rows = chunk.map(([k, ts]) => { const [kind, ...rest] = k.split(':'), v = recs[k];
+        return { kind, id: rest.join(':'), data: v ?? null, deleted: !v, updated_at: new Date(ts).toISOString() }; });
+      const { error } = await cloud.from('stride_records').upsert(rows, { onConflict: 'user_id,kind,id' }); if(error) throw error;
+      for(const [k, ts] of chunk){ if(sync.dirty[k] !== ts) continue; const v = recs[k];
+        if(v) sync.synced[k] = hashStr(JSON.stringify(v)); else delete sync.synced[k]; delete sync.dirty[k]; }
+    }
+    sync.lastPull = maxSynced; sync.lastSync = Date.now(); syncState.status = 'ok';
+  } catch(e){ syncState = { ...syncState, status: 'error', error: e.message || String(e) }; }
+  finally { syncing = false; saveSync(); renderSyncDot(); }
+  // Re-render with pulled changes, except mid-workout where it would interrupt typing.
+  if(changed && !location.hash.startsWith('#/workout')) route();
+}
+async function loadContent(){
+  if(!cloud || window.STRIDE_PROGRAMS) return;
+  for(const name of ['programs', 'recipes']){
+    const { data, error } = await cloud.storage.from('content').download(name + '.json');
+    if(error || !data) continue;
+    const text = await data.text();
+    try { localStorage.setItem('stride.content.' + name, text); } catch {}
+    if(name === 'programs') PROGRAMS = JSON.parse(text); else RECIPES = JSON.parse(text);
+  }
+  if(!location.hash.startsWith('#/workout')) route();
+}
+async function uploadContent(){
+  for(const [name, data] of [['programs', window.STRIDE_PROGRAMS], ['recipes', window.STRIDE_RECIPES]]){
+    const { error } = await cloud.storage.from('content').upload(name + '.json', new Blob([JSON.stringify(data)], { type: 'application/json' }), { upsert: true });
+    if(error) throw error;
+  }
+}
+function renderSyncDot(){
+  const dot = document.getElementById('syncdot'); if(!dot) return;
+  dot.dataset.s = syncState.status;
+  dot.title = { off: 'Cloud sync not set up', 'signed-out': 'Not signed in', syncing: 'Syncing…', ok: 'Synced', error: 'Sync error: ' + syncState.error }[syncState.status];
+}
+if(cloud){
+  cloud.auth.onAuthStateChange((evt, session) => {
+    syncState.email = session?.user?.email || null;
+    if(session){ if(syncState.status === 'signed-out') syncState.status = 'ok'; if(evt === 'SIGNED_IN' || evt === 'INITIAL_SESSION'){ loadContent(); scheduleSync(300); } }
+    else syncState.status = 'signed-out';
+    renderSyncDot();
+  });
+  addEventListener('online', () => scheduleSync(500));
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') scheduleSync(500); });
+  setInterval(() => { if(document.visibilityState === 'visible') runSync(); }, 60000);
+}
+navigator.storage?.persist?.().catch(() => {});
+
+// ---------- sport types ----------
+const TYPES = {
+  run:{label:'Run',icon:'🏃',pace:true,intensity:1.0},
+  ride:{label:'Ride',icon:'🚴',pace:false,intensity:0.7},
+  walk:{label:'Walk',icon:'🚶',pace:true,intensity:0.4},
+  hike:{label:'Hike',icon:'🥾',pace:true,intensity:0.6},
+  swim:{label:'Swim',icon:'🏊',pace:true,intensity:1.0},
+  weight_training:{label:'Weight Training',icon:'🏋️',pace:false,intensity:0.8,noGps:true},
+  yoga:{label:'Yoga',icon:'🧘',pace:false,intensity:0.3,noGps:true},
+};
+
+// ---------- math / formatting ----------
+function haversine(a,b){ const R=6371000,r=Math.PI/180; const dLa=(b[0]-a[0])*r,dLo=(b[1]-a[1])*r;
+  const h=Math.sin(dLa/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLo/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
+function trackDistance(pts){ let d=0; for(let i=1;i<pts.length;i++) d+=haversine(pts[i-1],pts[i]); return d; }
+function elevGain(pts){ let g=0; for(let i=1;i<pts.length;i++){ const a=pts[i-1][3],b=pts[i][3]; if(a!=null&&b!=null&&b>a) g+=b-a; } return g; }
+function fmtTime(s){ s=Math.max(0,Math.round(s)); const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
+  return h?`${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`:`${m}:${String(x).padStart(2,'0')}`; }
+const km = m => (m/1000).toFixed(2);
+function pace(sec, meters){ if(!meters) return '–'; const s=sec/(meters/1000); return `${Math.floor(s/60)}:${String(Math.round(s%60)).padStart(2,'0')} /km`; }
+function speed(sec, meters){ return sec ? ((meters/1000)/(sec/3600)).toFixed(1)+' km/h' : '–'; }
+// Effort score: my own simple stand-in for Strava's (HR-based) Relative Effort.
+function effort(a){ return Math.round(a.movingTime/60 * (TYPES[a.type]?.intensity ?? 0.6)); }
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function startOfWeek(d){ const x=new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; }
+function dayKey(d){ const x=new Date(d); return `${x.getFullYear()}-${x.getMonth()}-${x.getDate()}`; }
+function isoDate(d){ const x=new Date(d); return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`; }
+function when(ts){ const d=new Date(ts); return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})+' at '+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}); }
+const uid = () => Math.random().toString(36).slice(2,10);
+
+// Strength helpers: Brzycki 1RM (Strong's default formula), program "1-2" style ranges, rest times like "~2-3 min".
+function e1rm(w, reps){ if(!w || !reps || reps < 1) return 0; return w / (1.0278 - 0.0278 * Math.min(reps, 25)); }
+const lowNum = s => { const m = String(s).match(/\d+/); return m ? +m[0] : 0; };
+function restSeconds(s){ const n = String(s).match(/[\d.]+/g); if(!n || /N\/A/i.test(s)) return 0; const v = n.map(Number); return Math.round((v.length > 1 ? (v[0]+v[1])/2 : v[0]) * 60); }
+const baseName = n => String(n).replace(/^(Superset\s+)?[A-Z]\d:\s*/i, '').trim();
+const wUnit = () => db.units;
+
+function splits(a){
+  const pts=a.points||[]; if(pts.length<2) return [];
+  const out=[]; let dist=0, startT=pts[0][2], next=1000;
+  for(let i=1;i<pts.length;i++){ dist+=haversine(pts[i-1],pts[i]);
+    if(dist>=next){ out.push({km:out.length+1, sec:(pts[i][2]-startT)/1000}); startT=pts[i][2]; next+=1000; } }
+  const rem=dist-(next-1000); if(rem>50) out.push({km:out.length+1, sec:(pts.at(-1)[2]-startT)/1000, partial:rem});
+  return out;
+}
+
+function thumbSvg(pts){
+  if(!pts||pts.length<2) return '';
+  const la=pts.map(p=>p[0]), lo=pts.map(p=>p[1]); const mnA=Math.min(...la),mxA=Math.max(...la),mnO=Math.min(...lo),mxO=Math.max(...lo);
+  const k=Math.cos((mnA+mxA)/2*Math.PI/180); const w=(mxO-mnO)*k||1e-5, h=(mxA-mnA)||1e-5, s=Math.max(w,h);
+  const xy=pts.map(p=>`${((p[1]-mnO)*k/s*100+(100-w/s*100)/2).toFixed(2)},${((mxA-p[0])/s*100+(100-h/s*100)/2).toFixed(2)}`).join(' ');
+  return `<svg class="thumb" viewBox="-5 -5 110 110" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><polyline points="${xy}"/></svg>`;
+}
+
+// ---------- program progress ----------
+function programById(id){ return PROGRAMS.find(p => p.id === id); }
+function sequence(p){ return p.weeks.flatMap(w => w.days.map((d, i) => ({ w: w.n, i, key: `${w.n}-${i}`, day: d, week: w }))); }
+function progress(){
+  if(!db.program) return null; const p = programById(db.program.id); if(!p) return null;
+  const seq = sequence(p), done = db.program.done || {};
+  const nextIdx = seq.findIndex(s => !done[s.key]);
+  return { p, seq, done, next: nextIdx < 0 ? null : seq[nextIdx], nextIdx, completed: seq.filter(s => done[s.key]).length };
+}
+function markDay(pid, key, value){
+  if(!db.program || db.program.id !== pid) return;
+  db.program.done = db.program.done || {};
+  if(value) db.program.done[key] = value; else delete db.program.done[key];
+  save();
+}
+
+// ---------- nutrition ----------
+function calorieTarget(){
+  const n = db.nutrition, maint = Math.round(n.bodyweight * n.activity);
+  const target = n.goal === 'bulk' ? Math.round(maint * (1 + n.pct/100)) : n.goal === 'cut' ? Math.round(maint * (1 - n.pct/100)) : maint;
+  return { maint, target };
+}
+function foodFor(date){ return db.food.filter(f => f.date === date); }
+function totals(entries){ return entries.reduce((t, f) => ({ kcal: t.kcal + f.kcal, protein: t.protein + (f.protein || 0), hasProtein: t.hasProtein || f.protein != null }), { kcal: 0, protein: 0, hasProtein: false }); }
+
+// ---------- router ----------
+const app = document.getElementById('app');
+let cleanup = null;
+function route(){
+  if(cleanup){ cleanup(); cleanup=null; }
+  const [, page='feed', ...args] = location.hash.split('/');
+  const navFor = { program:'programs', day:'programs', workout:'programs', recipe:'meals' };
+  document.querySelectorAll('[data-nav]').forEach(a=>a.classList.toggle('on', a.dataset.nav===(navFor[page]||page)));
+  ({feed:viewFeed, log:viewLog, record:viewRecord, activity:viewActivity, programs:viewPrograms, program:viewProgram,
+    day:viewDay, workout:viewWorkout, meals:viewMeals, recipe:viewRecipe, account:viewAccount}[page] || viewFeed)(...args.map(decodeURIComponent));
+  renderSyncDot();
+  window.scrollTo(0,0);
+}
+
+// ---------- account & sync ----------
+function contentMissing(what){
+  return `<div class="card empty"><h2>Sign in to load your ${what}</h2>
+    <p class="muted">Your ${what} come from your PDFs and are kept in your private cloud storage, not in the app itself.</p>
+    <a class="btn primary" href="#/account">Sign in</a></div>`;
+}
+async function viewAccount(){
+  if(!cloud){ app.innerHTML = `<div class="card"><h1>Account</h1><p class="muted">Cloud sync isn't set up yet. Everything is saved on this device only.</p>
+    <p class="small muted">To turn it on, add your Supabase project URL and anon key to <code>config.js</code>.</p></div>`; return; }
+  const { data: { session } } = await cloud.auth.getSession();
+  if(!session){
+    app.innerHTML = `<div class="card" style="max-width:440px;margin:0 auto"><h1>Sign in</h1>
+      <p class="small muted">Sign in to sync your workouts, runs, food log and program progress across your devices.</p>
+      <form id="signin"><label>Email</label><input name="email" type="email" autocomplete="username" required>
+        <label>Password</label><input name="password" type="password" autocomplete="current-password" required>
+        <button class="primary" style="width:100%;margin-top:14px">Sign in</button></form>
+      <p class="small err" id="autherr"></p></div>`;
+    document.getElementById('signin').onsubmit = async e => { e.preventDefault(); const f = e.target, err = document.getElementById('autherr');
+      err.textContent = ''; f.querySelector('button').disabled = true;
+      const { error } = await cloud.auth.signInWithPassword({ email: f.email.value.trim(), password: f.password.value });
+      f.querySelector('button').disabled = false;
+      if(error){ err.textContent = error.message; return; }
+      location.hash = '#/feed'; };
+    return;
+  }
+  const pending = Object.keys(sync.dirty).length;
+  app.innerHTML = `<div class="card" style="max-width:560px;margin:0 auto">
+    <h1>Account</h1>
+    <div class="small muted">Signed in as</div><div style="font-weight:700">${esc(session.user.email)}</div>
+    <div class="stats"><div class="stat"><b>${{ ok: 'Synced', syncing: 'Syncing…', error: 'Error', 'signed-out': '—' }[syncState.status] || '—'}</b><span>status</span></div>
+      <div class="stat"><b>${sync.lastSync ? new Date(sync.lastSync).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : 'Never'}</b><span>last sync</span></div>
+      <div class="stat"><b>${pending}</b><span>changes waiting</span></div></div>
+    ${syncState.error ? `<p class="small err">${esc(syncState.error)}</p>` : ''}
+    <div class="row"><button class="primary fit" id="syncnow">Sync now</button><button class="fit" id="signout">Sign out</button></div>
+    <h3 style="margin-top:20px">Program &amp; recipe content</h3>
+    <p class="small muted">${PROGRAMS.length} programs and ${RECIPES.length} recipes on this device.</p>
+    ${window.STRIDE_PROGRAMS ? `<p class="small muted">This laptop has the content files. Upload them once to your private cloud storage so your phone can load them after signing in.</p>
+      <button id="upload">Upload content to my cloud</button>` : `<button id="reload">Re-download content</button>`}
+    <p class="small" id="cmsg"></p></div>`;
+  document.getElementById('syncnow').onclick = async () => { await runSync(); route(); };
+  document.getElementById('signout').onclick = async () => { await cloud.auth.signOut(); route(); };
+  const up = document.getElementById('upload'), msg = document.getElementById('cmsg');
+  if(up) up.onclick = async () => { up.disabled = true; msg.textContent = 'Uploading…';
+    try { await uploadContent(); msg.textContent = 'Uploaded. Your phone will download it after you sign in there.'; } catch(e){ msg.textContent = 'Upload failed: ' + (e.message || e); }
+    up.disabled = false; };
+  const rl = document.getElementById('reload');
+  if(rl) rl.onclick = async () => { msg.textContent = 'Downloading…'; await loadContent(); };
+}
+addEventListener('hashchange', route);
+
+// ---------- dashboard ----------
+function sidebar(){
+  const acts=db.activities, now=new Date(), wk=startOfWeek(now);
+  const weekActs=acts.filter(a=>a.startedAt>=+wk);
+  const weekKm=weekActs.reduce((s,a)=>s+a.distance,0)/1000;
+  const yrStart=new Date(now.getFullYear(),0,1);
+  const yrKm=acts.filter(a=>a.startedAt>=+yrStart).reduce((s,a)=>s+a.distance,0)/1000;
+  const dayOfYear=(now-yrStart)/864e5+1, expected=db.yearGoalKm*dayOfYear/365, diff=yrKm-expected;
+  const weeks=new Set(acts.map(a=>+startOfWeek(a.startedAt))); let streak=0, w=new Date(wk);
+  if(!weeks.has(+w)) w.setDate(w.getDate()-7);
+  while(weeks.has(+w)){ streak++; w.setDate(w.getDate()-7); }
+  const byDay={}; weekActs.forEach(a=>{ const k=dayKey(a.startedAt); byDay[k] = byDay[k] === 'on' ? 'on' : (a.strength ? 'lift' : 'on'); });
+  const dots=['M','T','W','T','F','S','S'].map((l,i)=>{ const d=new Date(wk); d.setDate(d.getDate()+i); return `<div><i class="${byDay[dayKey(d)]||''}"></i>${l}</div>`; }).join('');
+  const { target } = calorieTarget(), today = totals(foodFor(isoDate(Date.now())));
+  return `
+  <div class="card">
+    <h2>${esc(db.athlete)}</h2>
+    <div class="stats"><div class="stat"><b>${acts.length}</b><span>Activities</span></div>
+      <div class="stat"><b>${acts.filter(a=>a.strength).length}</b><span>Lifts</span></div>
+      <div class="stat"><b>${Math.round(acts.reduce((s,a)=>s+a.distance,0)/1000)}</b><span>Total km</span></div></div>
+  </div>
+  <div class="card">
+    <h3>Your streak: ${streak} ${streak===1?'week':'weeks'}</h3>
+    <div class="streak">${dots}</div>
+  </div>
+  <div class="card">
+    <div class="row"><h3 style="margin:0">Today's food</h3><a class="fit small" href="#/meals">Log food</a></div>
+    <div class="small">${today.kcal} / ${target} kcal</div>
+    <div class="meter food ${today.kcal>target?'over':''}"><i style="width:${Math.min(100,today.kcal/target*100)}%"></i></div>
+    ${today.hasProtein?`<div class="small muted">${Math.round(today.protein)} g protein${db.nutrition.proteinGoal?` / ${db.nutrition.proteinGoal} g`:''}</div>`:''}
+  </div>
+  <div class="card">
+    <div class="row"><h3 style="margin:0">Distance goals</h3><button class="small fit" id="editGoals">Edit</button></div>
+    <div class="small" style="margin-top:6px">This Week · ${weekKm.toFixed(1)} / ${db.weeklyGoalKm} km</div>
+    <div class="meter"><i style="width:${Math.min(100,weekKm/db.weeklyGoalKm*100)}%"></i></div>
+    <div class="small" style="margin-top:10px">This Year · ${yrKm.toFixed(0)} / ${db.yearGoalKm} km</div>
+    <div class="meter"><i style="width:${Math.min(100,yrKm/db.yearGoalKm*100)}%"></i></div>
+    <div class="small muted">${Math.abs(diff).toFixed(1)} km ${diff>=0?'ahead of':'behind'} pace</div>
+    <form id="goalForm" hidden>
+      <label>Weekly goal (km)</label><input type="number" min="1" name="w" value="${db.weeklyGoalKm}">
+      <label>Yearly goal (km)</label><input type="number" min="1" name="y" value="${db.yearGoalKm}">
+      <div class="row" style="margin-top:10px"><button class="primary">Save</button><button type="button" id="cancelGoals">Cancel</button></div>
+    </form>
+  </div>`;
+}
+function wireSidebar(){
+  const f=document.getElementById('goalForm');
+  document.getElementById('editGoals').onclick=()=>f.hidden=false;
+  document.getElementById('cancelGoals').onclick=()=>f.hidden=true;
+  f.onsubmit=e=>{ e.preventDefault(); db.weeklyGoalKm=+f.w.value||db.weeklyGoalKm; db.yearGoalKm=+f.y.value||db.yearGoalKm; save(); route(); };
+}
+function upNextCard(){
+  if(db.live) return `<div class="card" style="border-color:var(--lift)"><div class="row"><div><span class="pill lift">Workout in progress</span><h2 style="margin:6px 0 0">${esc(db.live.name)}</h2>
+    <div class="small muted">Started ${when(db.live.startedAt)}</div></div><a class="btn liftbtn fit" href="#/workout">Resume</a></div></div>`;
+  const pr = progress();
+  if(!pr) return `<div class="card"><div class="row"><div><h3 style="margin:0">Follow a training program</h3><div class="small muted">Full Body, Push/Pull/Legs or Upper/Lower, 10 weeks each.</div></div><a class="btn fit" href="#/programs">Browse programs</a></div></div>`;
+  if(!pr.next) return `<div class="card"><h3>${esc(pr.p.name)} complete 🎉</h3><a href="#/program/${pr.p.id}">See the program</a></div>`;
+  const n = pr.next, pct = pr.completed / pr.seq.length * 100;
+  return `<div class="card" style="border-color:var(--lift)">
+    <div class="row"><div><span class="pill lift">${esc(pr.p.name)} · Week ${n.w}</span>
+      <h2 style="margin:6px 0 2px">Up next: ${esc(n.day.label)}</h2>
+      <div class="small muted">${n.day.rest ? 'Rest day' : `${n.day.exercises.length} exercises`} · ${pr.completed} of ${pr.seq.length} days done</div></div>
+      <a class="btn liftbtn fit" href="#/day/${pr.p.id}/${n.key}">${n.day.rest ? 'View' : 'Open workout'}</a></div>
+    <div class="meter lift"><i style="width:${pct}%"></i></div></div>`;
+}
+function feedCard(a){
+  const t=TYPES[a.type]||{label:a.type,icon:'•'};
+  if(a.strength){
+    const ex=a.strength.exercises, prs=ex.filter(e=>e.pr).length;
+    return `<div class="card feed-card">
+      <div class="small muted">${t.icon} ${esc(db.athlete)} · ${when(a.startedAt)} <span class="pill lift">Strength</span></div>
+      <a class="title" href="#/activity/${a.id}">${esc(a.name)}</a>
+      ${a.strength.program?`<div class="small muted">${esc(a.strength.program.name)} · Week ${a.strength.program.week}</div>`:''}
+      <div class="stats"><div class="stat"><span>Time</span><b>${fmtTime(a.movingTime)}</b></div>
+        <div class="stat"><span>Volume</span><b>${Math.round(a.strength.volume).toLocaleString()} ${a.strength.unit}</b></div>
+        <div class="stat"><span>Sets</span><b>${ex.reduce((s,e)=>s+e.sets.filter(x=>x.type!=='W').length,0)}</b></div></div>
+      <div class="small">${ex.slice(0,3).map(e=>`${esc(e.name)} · ${e.sets.filter(s=>s.type!=='W').length} sets${e.pr?' 🏆':''}`).join('<br>')}${ex.length>3?`<br><span class="muted">+${ex.length-3} more</span>`:''}</div>
+      <div class="small muted" style="margin-top:8px">${prs?`🏆 ${prs} PR${prs>1?'s':''} · `:''}👍 ${a.kudos} kudos · 💬 ${a.comments.length} comments</div>
+    </div>`;
+  }
+  return `<div class="card feed-card">
+    <div class="top"><div><div class="small muted">${t.icon} ${esc(db.athlete)} · ${when(a.startedAt)}</div>
+      <a class="title" href="#/activity/${a.id}">${esc(a.name)}</a></div></div>
+    <div class="stats">
+      ${a.distance?`<div class="stat"><span>Distance</span><b>${km(a.distance)} km</b></div>`:''}
+      ${a.distance?`<div class="stat"><span>${t.pace?'Pace':'Speed'}</span><b>${t.pace?pace(a.movingTime,a.distance):speed(a.movingTime,a.distance)}</b></div>`:''}
+      <div class="stat"><span>Time</span><b>${fmtTime(a.movingTime)}</b></div>
+    </div>
+    ${a.points?.length>1?thumbSvg(a.points):''}
+    <div class="small muted" style="margin-top:8px">👍 ${a.kudos} kudos · 💬 ${a.comments.length} comments</div>
+  </div>`;
+}
+function viewFeed(){
+  const acts=db.activities;
+  app.innerHTML=`${upNextCard()}<div class="grid"><aside>${sidebar()}</aside><section>
+    <div class="row" style="margin-bottom:12px"><h2 style="margin:0">My Activities</h2>
+      <span class="fit"><button id="seed" class="small">Load sample data</button></span></div>
+    ${acts.length?acts.map(feedCard).join(''):`<div class="card empty"><h2>No activities yet</h2>
+      <p class="muted">Record a run or ride, start a program workout, or load sample data to look around.</p>
+      <a class="btn primary" href="#/record">Record an activity</a></div>`}
+  </section></div>`;
+  wireSidebar();
+  document.getElementById('seed').onclick=()=>{ seedSample(); route(); };
+}
+
+// ---------- activity detail ----------
+function viewActivity(id){
+  const a=db.activities.find(x=>x.id===id);
+  if(!a){ app.innerHTML=`<div class="card empty"><h2>Activity not found</h2><a href="#/feed">Back to dashboard</a></div>`; return; }
+  const t=TYPES[a.type]||{label:a.type};
+  const header = `<div class="small muted">${t.icon||''} ${t.label} · ${when(a.startedAt)}</div>
+    <h1 contenteditable="true" id="aname" spellcheck="false">${esc(a.name)}</h1>${a.notes?`<p>${esc(a.notes)}</p>`:''}`;
+  let body;
+  if(a.strength){
+    const s=a.strength;
+    body = `<div class="card">${header}
+      ${s.program?`<a class="pill lift" href="#/program/${s.program.id}" style="text-decoration:none">${esc(s.program.name)} · Week ${s.program.week} · ${esc(s.program.day)}</a>`:''}
+      <div class="stats"><div class="stat"><b>${fmtTime(a.movingTime)}</b><span>Duration</span></div>
+        <div class="stat"><b>${Math.round(s.volume).toLocaleString()} ${s.unit}</b><span>Volume</span></div>
+        <div class="stat"><b>${s.exercises.filter(e=>e.pr).length}</b><span>PRs</span></div>
+        <div class="stat"><b>${effort(a)}</b><span>Effort</span></div></div></div>
+      <div class="card"><h2>Exercises</h2>${s.exercises.map(e=>{
+        const best=Math.max(0,...e.sets.filter(x=>x.type!=='W').map(x=>e1rm(x.weight,x.reps)));
+        return `<div class="ex"><div class="row"><b>${esc(e.name)}</b>${e.pr?'<span class="pill good fit">🏆 New est. 1RM PR</span>':''}</div>
+          <table>${e.sets.map((x,i)=>`<tr><td style="width:40px" class="${x.type==='W'?'muted':''}">${x.type==='W'?'W':e.sets.slice(0,i+1).filter(y=>y.type!=='W').length}</td>
+            <td>${x.weight??'–'} ${s.unit} × ${x.reps??'–'}${x.rpe?` @ RPE ${x.rpe}`:''}</td></tr>`).join('')}</table>
+          ${best?`<div class="small muted">Best est. 1RM: ${Math.round(best)} ${s.unit}</div>`:''}</div>`;}).join('')}</div>`;
+  } else {
+    const sp=splits(a); const maxS=Math.max(...sp.map(s=>s.partial?s.sec/(s.partial/1000):s.sec),1);
+    body = `<div class="card">${header}
+      <div class="stats">
+        <div class="stat"><b>${km(a.distance)} km</b><span>Distance</span></div>
+        <div class="stat"><b>${fmtTime(a.movingTime)}</b><span>Moving Time</span></div>
+        <div class="stat"><b>${t.pace?pace(a.movingTime,a.distance):speed(a.movingTime,a.distance)}</b><span>${t.pace?'Pace':'Avg Speed'}</span></div>
+        <div class="stat"><b>${Math.round(a.elevGain)} m</b><span>Elevation</span></div>
+        <div class="stat"><b>${effort(a)}</b><span>Effort</span></div></div></div>
+      ${a.points?.length>1?`<div class="card"><div id="map"></div></div>`:''}
+      ${sp.length?`<div class="card"><h2>Splits</h2><table><tr><th>Km</th><th>Pace</th><th style="width:50%"></th></tr>
+        ${sp.map(s=>{ const per=s.partial?s.sec/(s.partial/1000):s.sec; return `<tr><td>${s.partial?(s.partial/1000).toFixed(2):s.km}</td><td>${fmtTime(per)} /km</td><td><div class="splitbar" style="width:${per/maxS*100}%"></div></td></tr>`; }).join('')}
+      </table></div>`:''}`;
+  }
+  app.innerHTML = body + `
+  <div class="card">
+    <div class="row"><span class="fit"><button class="kudos ${a.kudosGiven?'on':''}" id="kudos">👍 Kudos (${a.kudos})</button></span>
+      <span style="text-align:right"><button id="del" class="small">Delete activity</button></span></div>
+    <h3 style="margin-top:16px">Comments</h3>
+    <div id="comments">${a.comments.length?a.comments.map(c=>`<div class="comment"><b>${esc(c.who)}</b> <span class="small muted">${new Date(c.at).toLocaleString()}</span><div>${esc(c.text)}</div></div>`).join(''):'<p class="muted">No comments yet. Be the first.</p>'}</div>
+    <form id="cform" class="row" style="margin-top:8px"><input name="t" placeholder="Add a comment" required maxlength="500"><span class="fit"><button class="primary">Post</button></span></form>
+  </div>`;
+  if(a.points?.length>1 && window.L && !a.strength){
+    const map=L.map('map'); L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd',attribution:'© OpenStreetMap contributors © CARTO'}).addTo(map);
+    const line=L.polyline(a.points.map(p=>[p[0],p[1]]),{color:getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#e8590c',weight:4}).addTo(map);
+    L.circleMarker(a.points[0].slice(0,2),{radius:6,color:'#2f9e44',fillOpacity:1}).addTo(map);
+    L.circleMarker(a.points.at(-1).slice(0,2),{radius:6,color:'#c92a2a',fillOpacity:1}).addTo(map);
+    map.fitBounds(line.getBounds(),{padding:[20,20]});
+    cleanup=()=>map.remove();
+  }
+  document.getElementById('kudos').onclick=()=>{ a.kudosGiven=!a.kudosGiven; a.kudos+=a.kudosGiven?1:-1; save(); route(); };
+  document.getElementById('del').onclick=()=>{ if(confirm('Delete this activity?')){
+    if(a.strength?.program) markDay(a.strength.program.id, a.strength.program.key, null);
+    db.activities=db.activities.filter(x=>x!==a); save(); location.hash='#/feed'; } };
+  document.getElementById('cform').onsubmit=e=>{ e.preventDefault(); a.comments.push({who:db.athlete,text:e.target.t.value.trim(),at:Date.now()}); save(); route(); };
+  const n=document.getElementById('aname'); n.onblur=()=>{ const v=n.textContent.trim(); if(v&&v!==a.name){ a.name=v; save(); } };
+  n.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); n.blur(); } };
+}
+
+// ---------- programs ----------
+function viewPrograms(){
+  if(!PROGRAMS.length){ app.innerHTML = contentMissing('programs'); return; }
+  const pr = progress();
+  app.innerHTML = `<h1>Programs</h1><p class="muted">From your Pure Bodybuilding Program PDFs. Pick one and Stride keeps track of which day you're on.</p>
+    <div class="recipes" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr))">${PROGRAMS.map(p=>{
+      const days=sequence(p), train=days.filter(s=>!s.day.rest).length, perWeek=p.weeks[0].days.filter(d=>!d.rest).length;
+      const active = pr && pr.p.id===p.id;
+      return `<a class="rcard" href="#/program/${p.id}" style="${active?'border-color:var(--lift)':''}">
+        ${active?'<span class="pill lift">Active</span>':''}
+        <b style="font-size:18px;margin-top:4px">${esc(p.name)}</b>
+        <div class="small muted">${p.weeks.length} weeks · ${perWeek} training days per ${p.id==='ppl'?'8-day cycle':'week'} · ${train} workouts</div>
+        <div class="small" style="margin-top:8px">${p.blocks.map(b=>esc(b.name)).join('<br>')}</div>
+        ${active?`<div class="meter lift" style="margin-top:8px"><i style="width:${pr.completed/pr.seq.length*100}%"></i></div><div class="small muted">${pr.completed} of ${pr.seq.length} days done</div>`:''}
+      </a>`; }).join('')}</div>`;
+}
+function viewProgram(pid){
+  const p = programById(pid); if(!p){ app.innerHTML = PROGRAMS.length ? '<div class="card empty">Program not found.</div>' : contentMissing('programs'); return; }
+  const pr = progress(), active = pr && pr.p.id===pid, done = active ? pr.done : {};
+  const openWeek = active && pr.next ? pr.next.w : 1;
+  const blockAt = Object.fromEntries(p.blocks.map(b=>[b.startWeek,b.name]));
+  app.innerHTML = `<div class="card">
+      <a class="small" href="#/programs">← All programs</a>
+      <h1 style="margin-top:6px">${esc(p.name)}</h1>
+      <div class="small muted">${esc(p.source)}</div>
+      ${active ? `<div class="meter lift" style="margin-top:10px"><i style="width:${pr.completed/pr.seq.length*100}%"></i></div>
+        <div class="row small"><span>${pr.completed} of ${pr.seq.length} days done${pr.next?` · up next: Week ${pr.next.w}, ${esc(pr.next.day.label)}`:' · finished!'}</span>
+        <span class="fit"><button class="small" id="stop">Leave program</button></span></div>`
+      : `<div class="row" style="margin-top:10px"><span class="small muted">${pr?`You're currently on ${esc(pr.p.name)}. Starting this one replaces it (your logged workouts stay).`:'Start to track your place week by week.'}</span>
+        <span class="fit"><button class="liftbtn" id="start">Start program</button></span></div>`}
+    </div>
+    ${p.weeks.map(w=>`${blockAt[w.n]?`<h2 style="margin:18px 0 8px">${esc(blockAt[w.n])}</h2>`:''}
+      <details class="card" ${w.n===openWeek?'open':''} style="padding:12px 16px">
+        <summary style="font-size:16px;color:var(--ink);font-weight:600">Week ${w.n}
+          <span class="small muted" style="font-weight:400"> · ${w.days.filter((d,i)=>!d.rest && done[`${w.n}-${i}`]).length}/${w.days.filter(d=>!d.rest).length} workouts</span>
+          ${w.banner?' <span class="pill warn">Semi-deload</span>':''}</summary>
+        ${w.banner?`<div class="banner">${esc(w.banner)}</div>`:''}
+        <div class="daylist" style="margin-top:8px">${w.days.map((d,i)=>{ const key=`${w.n}-${i}`, st=done[key], isNext=active&&pr.next?.key===key;
+          if(d.rest) return `<div class="rest">${st?'✓ ':''}— ${esc(d.label)} —${isNext?' <span class="pill lift">Up next</span>':''}</div>`;
+          return `<a href="#/day/${p.id}/${key}" class="${isNext?'next':''}"><span>${st==='skipped'?'⤼':st?'✅':'○'} <b>${esc(d.label)}</b>
+            <span class="small muted">· ${d.exercises.length} exercises</span></span>${isNext?'<span class="pill lift">Up next</span>':st==='skipped'?'<span class="small muted">Skipped</span>':''}</a>`; }).join('')}</div>
+      </details>`).join('')}`;
+  const st=document.getElementById('start'); if(st) st.onclick=()=>{ db.program={ id:pid, startedAt:Date.now(), done:{} }; save(); route(); };
+  const sp=document.getElementById('stop'); if(sp) sp.onclick=()=>{ if(confirm('Leave this program? Your progress through it will be cleared (logged workouts stay).')){ db.program=null; save(); route(); } };
+}
+function parseKey(key){ const [w,i]=key.split('-').map(Number); return {w,i}; }
+function viewDay(pid, key){
+  const p = programById(pid); const {w,i} = parseKey(key||'');
+  const week = p?.weeks[w-1], d = week?.days[i];
+  if(!d){ app.innerHTML = PROGRAMS.length ? '<div class="card empty">Day not found.</div>' : contentMissing('programs'); return; }
+  const pr = progress(), active = pr && pr.p.id===pid, st = active ? pr.done[key] : null;
+  const seq = sequence(p), idx = seq.findIndex(s=>s.key===key);
+  const prevKey = seq[idx-1]?.key, nextKey = seq[idx+1]?.key;
+  const doneAct = st && st!=='skipped' && st!=='rest' ? db.activities.find(a=>a.id===st) : null;
+  app.innerHTML = `<div class="card">
+    <div class="row small"><a class="fit" href="#/program/${pid}">← ${esc(p.name)}</a><span></span>
+      ${prevKey?`<a class="fit" href="#/day/${pid}/${prevKey}">‹ Prev</a>`:''}${nextKey?`<a class="fit" href="#/day/${pid}/${nextKey}">Next ›</a>`:''}</div>
+    <div class="small muted" style="margin-top:8px">Week ${w}${p.blocks.slice().reverse().find(b=>b.startWeek<=w)?' · '+esc(p.blocks.slice().reverse().find(b=>b.startWeek<=w).name):''}</div>
+    <h1>${esc(d.label)}</h1>
+    ${week.banner?`<div class="banner">${esc(week.banner)}</div>`:''}
+    ${d.rest ? `<p class="muted">${d.label.startsWith('Mandatory')?'Take this day off to recover.':'Rest today if you need it, or move straight on to the next workout.'}</p>
+        ${active?`<button class="liftbtn" id="restdone">${st?'Undo':'Mark rest day done'}</button>`:''}`
+      : `<div class="row" style="margin-top:8px">
+        ${doneAct?`<a class="btn fit" href="#/activity/${doneAct.id}">✅ Done · view workout</a>`
+          :`<button class="liftbtn fit" id="go">Start this workout</button>${active?`<button class="fit" id="skip">${st==='skipped'?'Unskip':'Skip'}</button>`:''}`}
+        ${!active?'<span class="small muted">Start the program to track your progress.</span>':''}</div>`}
+  </div>
+  ${d.rest?'':`<div class="card">${d.exercises.map(e=>`<div class="ex">
+      <div class="row"><b style="font-size:16px">${esc(e.exercise)}</b>${e.technique!=='N/A'?`<span class="pill accent fit">${esc(e.technique)}</span>`:''}</div>
+      <div class="small" style="margin:4px 0">${e.warmupSets!=='0'?`Warm-up ${esc(e.warmupSets)} · `:''}<b>${esc(e.workingSets)} × ${esc(e.reps)}</b> · RPE ${esc(e.earlyRpe)} → ${esc(e.lastRpe)} · Rest ${esc(e.rest)}</div>
+      <details><summary>Notes and substitutions</summary><p class="small">${esc(e.notes)}</p>
+        <div class="small muted">Substitutes: ${esc(e.sub1)} · ${esc(e.sub2)}</div></details></div>`).join('')}
+    <p class="small muted">Page ${d.page} of the PDF.</p></div>`}`;
+  const go=document.getElementById('go'); if(go) go.onclick=()=>startWorkout(p, w, i);
+  const sk=document.getElementById('skip'); if(sk) sk.onclick=()=>{ markDay(pid, key, st==='skipped'?null:'skipped'); route(); };
+  const rd=document.getElementById('restdone'); if(rd) rd.onclick=()=>{ markDay(pid, key, st?null:'rest'); if(!st) location.hash='#/feed'; else route(); };
+}
+
+// ---------- strength workout logger ----------
+function lastSetsFor(name){
+  const b = baseName(name);
+  for(const a of db.activities) if(a.strength){ const e=a.strength.exercises.find(x=>baseName(x.name)===b); if(e) return e.sets.filter(s=>s.type!=='W'); }
+  return [];
+}
+function startWorkout(p, w, i){
+  if(db.live && !confirm(`You already have "${db.live.name}" in progress. Discard it and start this one?`)) return;
+  const d = p ? p.weeks[w-1].days[i] : null;
+  db.live = {
+    id: uid(), name: d ? d.label : 'Strength workout', startedAt: Date.now(), restEnd: null, restTotal: 0,
+    program: d ? { id: p.id, name: p.name, week: w, key: `${w}-${i}`, day: d.label } : null,
+    exercises: d ? d.exercises.map(e => ({
+      name: e.exercise, plan: e, choice: 0,
+      sets: [...Array(lowNum(e.warmupSets)).fill('W'), ...Array(lowNum(e.workingSets)).fill('N')].map(type => ({ type, weight: '', reps: '', rpe: '', done: false })),
+    })) : [],
+  };
+  save(); location.hash = '#/workout';
+}
+function beep(){ try { const c=new AudioContext(), o=c.createOscillator(), g=c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value=880; g.gain.value=.15; o.start(); o.stop(c.currentTime+.4); } catch {} navigator.vibrate?.([200,100,200]); }
+function viewWorkout(){
+  const L = db.live;
+  if(!L){ app.innerHTML=`<div class="card empty"><h2>No workout in progress</h2><p class="muted">Start one from a program day, or start an empty workout.</p>
+    <div class="row" style="justify-content:center"><a class="btn liftbtn fit" href="#/programs">Programs</a><button class="fit" id="empty">Empty workout</button></div></div>`;
+    document.getElementById('empty').onclick=()=>startWorkout(null); return; }
+  const u = wUnit();
+  const exHtml = (e, ei) => {
+    const plan = e.plan, prev = lastSetsFor(e.name); let n = 0;
+    const names = plan ? [plan.exercise, plan.sub1, plan.sub2].filter(x=>!/See The Weak Point/i.test(x)) : [e.name];
+    return `<div class="ex" data-ex="${ei}">
+      <div class="row">${names.length>1?`<select data-swap="${ei}" style="font-weight:600;max-width:420px">${names.map((x,k)=>`<option value="${k}" ${k===e.choice?'selected':''}>${k?'Swap: ':''}${esc(x)}</option>`).join('')}</select>`:`<b style="font-size:16px">${esc(e.name)}</b>`}
+        ${plan&&plan.technique!=='N/A'?`<span class="pill accent fit">${esc(plan.technique)}</span>`:''}<button class="x fit" data-delex="${ei}" title="Remove exercise">✕</button></div>
+      ${plan?`<div class="small muted" style="margin:4px 0">Target ${esc(plan.workingSets)} × ${esc(plan.reps)} · RPE ${esc(plan.earlyRpe)} → ${esc(plan.lastRpe)} · Rest ${esc(plan.rest)}</div>
+        <details><summary>Notes</summary><p class="small">${esc(plan.notes)}</p></details>`:''}
+      <div class="setrow head"><span>Set</span><span>Previous</span><span>${u}</span><span>Reps</span><span>RPE</span><span></span></div>
+      ${e.sets.map((s,si)=>{ const label = s.type==='W' ? 'W' : ++n; const pv = s.type==='W' ? null : prev[n-1];
+        return `<div class="setrow ${s.done?'done':''}">
+          <span class="tag ${s.type==='W'?'w':''}" title="${s.type==='W'?'Warm-up set (not counted in volume or PRs)':''}">${label}</span>
+          <span class="small muted">${pv?`${pv.weight??'–'} × ${pv.reps??'–'}`:'—'}</span>
+          <input inputmode="decimal" data-f="weight" data-e="${ei}" data-s="${si}" value="${esc(s.weight)}" placeholder="${pv?.weight??''}">
+          <input inputmode="numeric" data-f="reps" data-e="${ei}" data-s="${si}" value="${esc(s.reps)}" placeholder="${pv?.reps ?? (s.type==='W'?'':esc(plan?String(plan.reps).split(/[,+]/)[0].trim():''))}">
+          <input inputmode="decimal" data-f="rpe" data-e="${ei}" data-s="${si}" value="${esc(s.rpe)}" placeholder="">
+          <button class="check ${s.done?'on':''}" data-done="${ei}:${si}" aria-label="Complete set">✓</button></div>`; }).join('')}
+      <div class="row" style="margin-top:6px"><button class="small fit" data-add="${ei}">+ Add set</button><button class="small fit" data-addw="${ei}">+ Warm-up</button></div>
+    </div>`;
+  };
+  app.innerHTML = `<div class="sticky" id="restbox"></div>
+    <div class="card">
+      <div class="row"><div><h1 style="margin:0">${esc(L.name)}</h1>
+        <div class="small muted">${L.program?`${esc(L.program.name)} · Week ${L.program.week} · `:''}<span id="elapsed"></span></div></div>
+        <div class="fit"><button id="units" class="small">${u==='lb'?'Use kg':'Use lb'}</button></div></div>
+      ${L.exercises.map(exHtml).join('') || '<p class="muted">Add an exercise to begin.</p>'}
+      <form id="addex" class="row" style="margin-top:12px"><input name="n" placeholder="Add an exercise (e.g. Barbell Bench Press)" required maxlength="80"><span class="fit"><button>Add</button></span></form>
+    </div>
+    <div class="row"><button class="liftbtn" id="finish">Finish workout</button><button id="discard" class="fit">Discard</button></div>`;
+  const rb = document.getElementById('restbox'), el = document.getElementById('elapsed');
+  function tick(){
+    el.textContent = 'Elapsed ' + fmtTime((Date.now()-L.startedAt)/1000);
+    if(L.restEnd){ const left = (L.restEnd - Date.now())/1000;
+      if(left <= 0){ L.restEnd = null; save(); beep(); rb.innerHTML=''; return; }
+      if(!rb.firstChild){ rb.innerHTML = `<div class="resttimer"><span>Rest</span><b id="rleft"></b><span><button data-rest="-15">−15</button> <button data-rest="15">+15</button> <button data-rest="0">Skip</button></span></div>`;
+        rb.querySelectorAll('[data-rest]').forEach(b=>b.onclick=()=>{ const v=+b.dataset.rest; L.restEnd = v ? L.restEnd + v*1000 : null; save(); if(!v) rb.innerHTML=''; tick(); }); }
+      const r = document.getElementById('rleft'); if(r) r.textContent = fmtTime(left);
+    } else rb.innerHTML = '';
+  }
+  tick(); const timer = setInterval(tick, 500); cleanup = () => clearInterval(timer);
+  app.querySelectorAll('input[data-f]').forEach(inp => inp.oninput = () => { L.exercises[inp.dataset.e].sets[inp.dataset.s][inp.dataset.f] = inp.value; save(); });
+  app.querySelectorAll('[data-done]').forEach(b => b.onclick = () => {
+    const [ei, si] = b.dataset.done.split(':').map(Number), e = L.exercises[ei], s = e.sets[si];
+    if(!s.done){ // fill blanks from the placeholders (previous/target) so a quick tap logs the obvious numbers
+      const row = b.closest('.setrow'); row.querySelectorAll('input').forEach(inp=>{ if(!inp.value && /^\d+(\.\d+)?$/.test(inp.placeholder) && inp.dataset.f!=='rpe') s[inp.dataset.f] = inp.placeholder; });
+      const secs = e.plan ? restSeconds(e.plan.rest) : 90; if(secs && s.type!=='W'){ L.restEnd = Date.now() + secs*1000; }
+    }
+    s.done = !s.done; save(); route();
+  });
+  app.querySelectorAll('[data-swap]').forEach(sel => sel.onchange = () => { const e=L.exercises[sel.dataset.swap]; e.choice=+sel.value; e.name=[e.plan.exercise,e.plan.sub1,e.plan.sub2][e.choice]; save(); route(); });
+  app.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { L.exercises[b.dataset.add].sets.push({type:'N',weight:'',reps:'',rpe:'',done:false}); save(); route(); });
+  app.querySelectorAll('[data-addw]').forEach(b => b.onclick = () => { const sets=L.exercises[b.dataset.addw].sets; sets.splice(sets.filter(s=>s.type==='W').length,0,{type:'W',weight:'',reps:'',rpe:'',done:false}); save(); route(); });
+  app.querySelectorAll('[data-delex]').forEach(b => b.onclick = () => { if(confirm('Remove this exercise?')){ L.exercises.splice(+b.dataset.delex,1); save(); route(); } });
+  document.getElementById('addex').onsubmit = e => { e.preventDefault(); L.exercises.push({ name: e.target.n.value.trim(), plan: null, choice: 0, sets: [0,1,2].map(()=>({type:'N',weight:'',reps:'',rpe:'',done:false})) }); save(); route(); };
+  document.getElementById('units').onclick = () => { db.units = db.units==='lb'?'kg':'lb'; save(); route(); };
+  document.getElementById('discard').onclick = () => { if(confirm('Discard this workout? Nothing will be saved.')){ db.live=null; save(); location.hash='#/feed'; } };
+  document.getElementById('finish').onclick = () => finishWorkout();
+}
+function finishWorkout(){
+  const L = db.live;
+  const exercises = L.exercises.map(e => ({ name: e.name, sets: e.sets.filter(s => s.done).map(s => ({ type: s.type, weight: s.weight===''?null:+s.weight, reps: s.reps===''?null:+s.reps, rpe: s.rpe===''?null:+s.rpe })) })).filter(e => e.sets.length);
+  if(!exercises.length && !confirm('No sets are checked off. Finish anyway and save an empty workout?')) return;
+  // PR = best working-set est. 1RM beats every earlier logged set of the same exercise.
+  for(const e of exercises){
+    const best = Math.max(0, ...e.sets.filter(s=>s.type!=='W').map(s=>e1rm(s.weight, s.reps)));
+    const prior = db.activities.filter(a=>a.strength).flatMap(a=>a.strength.exercises.filter(x=>baseName(x.name)===baseName(e.name)).flatMap(x=>x.sets.filter(s=>s.type!=='W')));
+    e.pr = best > 0 && prior.length > 0 && best > Math.max(0, ...prior.map(s=>e1rm(s.weight, s.reps)));
+  }
+  const volume = exercises.reduce((v,e)=>v+e.sets.filter(s=>s.type!=='W').reduce((x,s)=>x+(s.weight||0)*(s.reps||0),0),0);
+  const a = { id: uid(), type: 'weight_training', name: L.name, startedAt: L.startedAt, movingTime: (Date.now()-L.startedAt)/1000,
+    distance: 0, elevGain: 0, points: [], notes: '', kudos: 0, kudosGiven: false, comments: [],
+    strength: { program: L.program, exercises, volume, unit: db.units } };
+  db.activities.push(a); db.activities.sort((x,y)=>y.startedAt-x.startedAt);
+  if(L.program) markDay(L.program.id, L.program.key, a.id);
+  db.live = null; save(); location.hash = '#/activity/' + a.id;
+}
+
+// ---------- meals & calories ----------
+let mealState = { date: isoDate(Date.now()), cat: 'All', q: '' };
+function viewMeals(){
+  const n = db.nutrition, { maint, target } = calorieTarget(), entries = foodFor(mealState.date), t = totals(entries);
+  const cats = ['All', ...new Set(RECIPES.map(r=>r.category))];
+  const today = isoDate(Date.now()), d = new Date(mealState.date + 'T12:00');
+  const pr = progress(), trainingToday = pr && db.activities.some(a=>a.strength && isoDate(a.startedAt)===mealState.date);
+  app.innerHTML = `<div class="grid"><aside>
+    <div class="card">
+      <div class="row"><button class="fit small" id="prevd">‹</button><b style="text-align:center">${mealState.date===today?'Today':d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})}</b><button class="fit small" id="nextd">›</button></div>
+      <div class="stats" style="justify-content:space-between"><div class="stat"><b>${t.kcal}</b><span>eaten</span></div><div class="stat"><b>${target}</b><span>target</span></div>
+        <div class="stat"><b style="color:${t.kcal>target?'var(--warn)':'var(--good)'}">${Math.abs(target-t.kcal)}</b><span>${t.kcal>target?'over':'left'}</span></div></div>
+      <div class="meter food ${t.kcal>target?'over':''}"><i style="width:${Math.min(100,t.kcal/target*100)}%"></i></div>
+      ${t.hasProtein||n.proteinGoal?`<div class="small" style="margin-top:6px">Protein: ${Math.round(t.protein)} g${n.proteinGoal?` / ${n.proteinGoal} g`:''}</div>`:''}
+      ${trainingToday?'<div class="small muted" style="margin-top:6px">🏋️ Training day</div>':''}
+      <div style="margin-top:10px">${entries.length?entries.map(f=>`<div class="foodrow"><div><div>${esc(f.name)}</div><div class="small muted">${f.servings!=null?`${f.servings} × · `:''}${f.kcal} kcal${f.protein!=null?` · ${Math.round(f.protein)} g protein`:''}</div></div><button class="x" data-del="${f.id}" aria-label="Remove">✕</button></div>`).join(''):'<p class="small muted">Nothing logged yet. Pick a recipe or quick-add below.</p>'}</div>
+    </div>
+    <div class="card"><h3>Quick add</h3>
+      <form id="quick"><input name="name" placeholder="Food (e.g. Greek yogurt)" required maxlength="80">
+        <div class="row" style="margin-top:8px"><input name="kcal" type="number" min="0" placeholder="kcal" required><input name="protein" type="number" min="0" step="0.1" placeholder="Protein g (optional)"></div>
+        <button class="primary" style="margin-top:8px;width:100%">Add</button></form></div>
+    <div class="card"><div class="row"><h3 style="margin:0">Calorie target</h3><button class="fit small" id="editT">Edit</button></div>
+      <div class="small" style="margin-top:6px">Maintenance ≈ ${maint} kcal <span class="muted">(${n.bodyweight} lb × ${n.activity})</span></div>
+      <div class="small"><b>${n.goal==='bulk'?`Lean bulk: +${n.pct}%`:n.goal==='cut'?`Cut: −${n.pct}%`:'Maintain'}</b> → ${target} kcal/day</div>
+      <form id="tform" hidden>
+        <label>Bodyweight (lb)</label><input name="bw" type="number" min="60" max="600" value="${n.bodyweight}">
+        <label>Activity (bodyweight ×)</label><select name="act">${[[14,'14 · less active'],[15,'15'],[16,'16 · typical'],[17,'17'],[18,'18 · very active']].map(([v,l])=>`<option value="${v}" ${n.activity==v?'selected':''}>${l}</option>`).join('')}</select>
+        <label>Goal</label><select name="goal">${[['bulk','Lean bulk (surplus)'],['maintain','Maintain / recomp'],['cut','Cut (deficit)']].map(([v,l])=>`<option value="${v}" ${n.goal===v?'selected':''}>${l}</option>`).join('')}</select>
+        <label>Surplus / deficit %</label><select name="pct">${[5,7.5,10,12.5,15].map(v=>`<option ${n.pct==v?'selected':''}>${v}</option>`).join('')}</select>
+        <label>Protein goal (g, optional)</label><input name="pg" type="number" min="0" value="${n.proteinGoal??''}">
+        <p class="small muted">From your Nutrition Booklet: maintenance ≈ bodyweight × 14–18 (16 if unsure). Lean bulk = 5–15% above maintenance.</p>
+        <button class="primary">Save</button></form></div>
+  </aside><section>
+    <div class="card"><h2>Recipes <span class="small muted">· Fit Foodie Cook Book, pork swapped for beef/turkey/chicken</span></h2>
+      <input id="q" placeholder="Search recipes or ingredients" value="${esc(mealState.q)}">
+      <div class="chips">${cats.map(c=>`<button data-cat="${esc(c)}" class="${c===mealState.cat?'on':''}">${esc(c)}</button>`).join('')}</div>
+      <div class="recipes" id="rlist"></div></div>
+  </section></div>`;
+  function renderList(){
+    if(!RECIPES.length){ document.getElementById('rlist').innerHTML = `<p class="muted">Recipes load from your private cloud storage. <a href="#/account">Sign in</a> to get them.</p>`; return; }
+    const q = mealState.q.toLowerCase();
+    const list = RECIPES.filter(r => (mealState.cat==='All' || r.category===mealState.cat) && (!q || (r.title + ' ' + r.ingredients.join(' ')).toLowerCase().includes(q)));
+    document.getElementById('rlist').innerHTML = list.map(r => `<a class="rcard" href="#/recipe/${r.id}">
+      <b>${esc(r.title)}</b><div class="small muted">${r.calories} kcal${r.caloriesUnit?' '+esc(r.caloriesUnit):''} · ${r.protein} g protein</div>
+      <div class="small muted">Serves ${esc(r.serves)}</div>
+      ${r.swapped?'<span class="pill good">Pork swapped</span>':''}</a>`).join('') || '<p class="muted">No recipes match.</p>';
+  }
+  renderList();
+  document.getElementById('q').oninput = e => { mealState.q = e.target.value; renderList(); };
+  app.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { mealState.cat = b.dataset.cat; app.querySelectorAll('[data-cat]').forEach(x=>x.classList.toggle('on', x===b)); renderList(); });
+  const shift = n => { const x = new Date(mealState.date + 'T12:00'); x.setDate(x.getDate()+n); mealState.date = isoDate(x); route(); };
+  document.getElementById('prevd').onclick = () => shift(-1);
+  document.getElementById('nextd').onclick = () => shift(1);
+  app.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { db.food = db.food.filter(f=>f.id!==b.dataset.del); save(); route(); });
+  document.getElementById('quick').onsubmit = e => { e.preventDefault(); const f=e.target;
+    db.food.push({ id: uid(), date: mealState.date, name: f.name.value.trim(), kcal: Math.round(+f.kcal.value), protein: f.protein.value===''?null:+f.protein.value, servings: null }); save(); route(); };
+  const tf = document.getElementById('tform');
+  document.getElementById('editT').onclick = () => tf.hidden = !tf.hidden;
+  tf.onsubmit = e => { e.preventDefault(); db.nutrition = { bodyweight: +tf.bw.value || n.bodyweight, activity: +tf.act.value, goal: tf.goal.value, pct: +tf.pct.value, proteinGoal: tf.pg.value===''?null:+tf.pg.value }; save(); route(); };
+}
+function viewRecipe(id){
+  const r = RECIPES.find(x=>x.id===id); if(!r){ app.innerHTML = RECIPES.length ? '<div class="card empty">Recipe not found.</div>' : contentMissing('recipes'); return; }
+  const per = r.caloriesUnit ? r.caloriesUnit.replace('per ','') : 'serving';
+  app.innerHTML = `<div class="card">
+    <a class="small" href="#/meals">← Meals</a>
+    <div class="small muted" style="margin-top:8px">${esc(r.category)}${r.originalTitle?` · originally "${esc(r.originalTitle)}"`:''}</div>
+    <h1>${esc(r.title)}</h1>
+    <div class="stats"><div class="stat"><b>${r.calories}</b><span>kcal ${esc(r.caloriesUnit||'')}</span></div><div class="stat"><b>${r.protein} g</b><span>protein</span></div>
+      <div class="stat"><b>${r.fat} g</b><span>fat</span></div><div class="stat"><b>${r.carbs} g</b><span>carbs</span></div><div class="stat"><b>${esc(r.serves)}</b><span>serves</span></div></div>
+    <div class="small muted">${esc(r.times||'')}</div>
+    ${r.notes.map(nt=>`<div class="banner" style="${/swapped|Swapped/.test(nt)?'':'background:var(--bg);color:var(--muted)'}">${esc(nt)}</div>`).join('')}
+    <form id="logr" class="row" style="margin-top:10px">
+      <label class="fit" style="margin:0">Log</label><input class="fit" style="width:80px" name="s" type="number" min="0.25" step="0.25" value="1">
+      <span class="fit small muted">× ${esc(per)} to</span><input class="fit" style="width:150px" name="d" type="date" value="${mealState.date}">
+      <span class="fit"><button class="primary">Add to food log</button></span></form>
+    <p class="small muted" id="logged"></p>
+  </div>
+  <div class="grid" style="grid-template-columns:minmax(0,1fr) minmax(0,1.6fr)">
+    <div class="card"><h2>Ingredients</h2><ul class="ing">${r.ingredients.map(t=>t.startsWith('## ')?`<li class="h">${esc(t.slice(3))}</li>`:`<li>${esc(t)}</li>`).join('')}</ul></div>
+    <div class="card steps"><h2>Instructions</h2>${r.steps.map(s=>s.heading?`<h4>${esc(s.heading)}</h4>`:`<p>${esc(s.text)}</p>`).join('')}
+      <p class="small muted">Page ${r.page} of the cookbook. Macros as printed in the book${r.caloriesAdjusted?', calories adjusted for the swap':''}.</p></div>
+  </div>`;
+  document.getElementById('logr').onsubmit = e => { e.preventDefault(); const s = +e.target.s.value || 1;
+    db.food.push({ id: uid(), date: e.target.d.value || isoDate(Date.now()), name: r.title, recipeId: r.id, servings: s, kcal: Math.round(r.calories*s), protein: Math.round(r.protein*s*10)/10 });
+    save(); document.getElementById('logged').innerHTML = `Added ${Math.round(r.calories*s)} kcal. <a href="#/meals">See food log</a>`; };
+}
+
+// ---------- training log ----------
+function viewLog(){
+  let dim; try { dim = sessionStorage.getItem('stride.dim') || 'distance'; } catch { dim = 'distance'; }
+  const val={distance:a=>a.distance/1000, moving_time:a=>a.movingTime/3600, elev_gain:a=>a.elevGain, effort:effort, volume:a=>(a.strength?.volume||0)/1000};
+  const unit={distance:'km',moving_time:'h',elev_gain:'m',effort:'',volume:'k '+db.units};
+  const acts=db.activities; const byDay={};
+  acts.forEach(a=>{ (byDay[dayKey(a.startedAt)] ||= []).push(a); });
+  const max=Math.max(1e-9,...Object.values(byDay).map(l=>l.reduce((s,a)=>s+val[dim](a),0)));
+  const wk0=startOfWeek(new Date()); let rows='';
+  for(let w=0; w<8; w++){
+    const ws=new Date(wk0); ws.setDate(ws.getDate()-7*w); let tot=0, cells='';
+    for(let d=0; d<7; d++){ const day=new Date(ws); day.setDate(day.getDate()+d); const list=byDay[dayKey(day)]||[];
+      const v=list.reduce((s,a)=>s+val[dim](a),0); tot+=v; const size=v?10+30*Math.sqrt(v/max):0; const lift=list.length&&list.every(a=>a.strength);
+      cells+= list.length && v ? `<a href="#/activity/${list[0].id}" title="${esc(list.map(a=>a.name).join(', '))}: ${v.toFixed(1)} ${unit[dim]}"><div class="bubble ${lift?'lift':''}" style="width:${size}px;height:${size}px"></div></a>`
+        : `<div class="small muted" style="text-align:center">${list.length?'•':day>new Date()?'':'·'}</div>`; }
+    rows+=`<div class="log-week"><div class="small">${w===0?'This week':ws.toLocaleDateString(undefined,{month:'short',day:'numeric'})}</div>${cells}<div class="small" style="text-align:right"><b>${tot.toFixed(dim==='elev_gain'||dim==='effort'?0:1)}</b> ${unit[dim]}</div></div>`;
+  }
+  const labels={distance:'Distance',moving_time:'Time',elev_gain:'Elevation',volume:'Volume',effort:'Effort'};
+  app.innerHTML=`<div class="card"><h2>Training Log</h2>
+    <div class="tabs">${Object.entries(labels).map(([k,l])=>`<button data-dim="${k}" class="${k===dim?'on':''}">${l}</button>`).join('')}</div>
+    <div class="log-week head"><div></div>${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div style="text-align:center">${d}</div>`).join('')}<div style="text-align:right">Total</div></div>
+    ${rows}
+    <p class="small muted">Orange = cardio, purple = strength.</p>
+  </div>`;
+  app.querySelectorAll('[data-dim]').forEach(b=>b.onclick=()=>{ try{sessionStorage.setItem('stride.dim',b.dataset.dim);}catch{} route(); });
+}
+
+// ---------- record (GPS) + manual entry ----------
+function viewRecord(){
+  const typeOpts=Object.entries(TYPES).map(([k,t])=>`<option value="${k}">${t.icon} ${t.label}</option>`).join('');
+  const pr = progress();
+  app.innerHTML=`<div class="card" style="max-width:560px;margin:0 auto">
+    <div class="tabs"><button data-tab="gps" class="on">Record with GPS</button><button data-tab="lift">Strength workout</button><button data-tab="manual">Add manual entry</button></div>
+    <div id="gps">
+      <label>Sport</label><select id="gtype">${typeOpts}</select>
+      <div class="timer" id="clock">0:00</div>
+      <div class="big"><div><b id="gdist">0.00</b><span class="small muted">km</span></div><div><b id="gpace">–</b><span class="small muted">pace</span></div><div><b id="gpts">0</b><span class="small muted">GPS points</span></div></div>
+      <p id="gmsg" class="small muted">Location is only used while recording and stays in this browser.</p>
+      <div class="row"><button class="primary" id="start">Start</button><button id="pause" disabled>Pause</button><button id="finish" disabled>Finish</button></div>
+    </div>
+    <div id="lift" hidden>
+      ${db.live?`<p>You have <b>${esc(db.live.name)}</b> in progress.</p><a class="btn liftbtn" href="#/workout">Resume workout</a>`
+        : pr && pr.next && !pr.next.day.rest ? `<p>Up next in <b>${esc(pr.p.name)}</b>: Week ${pr.next.w}, ${esc(pr.next.day.label)}.</p><a class="btn liftbtn" href="#/day/${pr.p.id}/${pr.next.key}">Open program workout</a>`
+        : `<p class="muted">Follow a program to get premade workouts, or log your own.</p><a class="btn liftbtn" href="#/programs">Browse programs</a>`}
+      <button style="margin-left:8px" id="emptyw">Start an empty workout</button>
+    </div>
+    <form id="manual" hidden>
+      <label>Title</label><input name="name" placeholder="Morning Run">
+      <div class="row"><div><label>Sport</label><select name="type">${typeOpts}</select></div>
+        <div><label>Date &amp; time</label><input type="datetime-local" name="when" required></div></div>
+      <div class="row"><div><label>Distance (km)</label><input type="number" step="0.01" min="0" name="dist" value="0"></div>
+        <div><label>Elevation (m)</label><input type="number" min="0" name="elev" value="0"></div></div>
+      <div class="row"><div><label>Hours</label><input type="number" min="0" name="h" value="0"></div>
+        <div><label>Minutes</label><input type="number" min="0" max="59" name="m" value="30"></div>
+        <div><label>Seconds</label><input type="number" min="0" max="59" name="s" value="0"></div></div>
+      <label>Notes</label><textarea name="notes" rows="2"></textarea>
+      <div style="margin-top:12px"><button class="primary">Save activity</button></div>
+    </form>
+  </div>`;
+  const panes={gps:document.getElementById('gps'), lift:document.getElementById('lift'), manual:document.getElementById('manual')};
+  const tabs=app.querySelectorAll('[data-tab]');
+  tabs.forEach(b=>b.onclick=()=>{ tabs.forEach(x=>x.classList.toggle('on',x===b)); for(const k in panes) panes[k].hidden = k!==b.dataset.tab; });
+  document.getElementById('emptyw').onclick=()=>startWorkout(null);
+  const manual=panes.manual;
+  const nowLocal=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,16); manual.when.value=nowLocal;
+  manual.onsubmit=e=>{ e.preventDefault(); const f=manual; const sec=(+f.h.value)*3600+(+f.m.value)*60+(+f.s.value);
+    if(sec<=0){ alert('Add a duration.'); return; }
+    const a=newActivity(f.type.value, new Date(f.when.value).getTime(), sec, (+f.dist.value)*1000, +f.elev.value, [], f.name.value.trim(), f.notes.value.trim());
+    location.hash='#/activity/'+a.id; };
+
+  let watch=null, tick=null, running=false, pts=[], moving=0, lastT=null, started=null;
+  const $=id=>document.getElementById(id);
+  function render(){ const d=trackDistance(pts); $('clock').textContent=fmtTime(moving/1000); $('gdist').textContent=km(d);
+    $('gpace').textContent=d>20?pace(moving/1000,d).replace(' /km',''):'–'; $('gpts').textContent=pts.length; }
+  function onPos(p){ if(!running) return; const c=p.coords;
+    if(c.accuracy>50){ $('gmsg').textContent=`Waiting for a better GPS fix (±${Math.round(c.accuracy)} m)…`; return; }
+    const pt=[c.latitude,c.longitude,p.timestamp,c.altitude];
+    if(!pts.length || haversine(pts.at(-1),pt)>3) pts.push(pt);
+    $('gmsg').textContent=`GPS ok (±${Math.round(c.accuracy)} m)`; render(); }
+  function onErr(e){ $('gmsg').innerHTML=`<span class="err">GPS unavailable: ${esc(e.message)}. You can still use manual entry.</span>`; }
+  $('start').onclick=()=>{
+    if(!navigator.geolocation){ onErr({message:'not supported'}); return; }
+    if(!started) started=Date.now();
+    running=true; lastT=Date.now();
+    watch ??= navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000});
+    tick=setInterval(()=>{ const n=Date.now(); moving+=n-lastT; lastT=n; render(); },500);
+    $('start').disabled=true; $('pause').disabled=false; $('finish').disabled=false; $('gtype').disabled=true; };
+  $('pause').onclick=()=>{ running=false; clearInterval(tick); $('start').disabled=false; $('start').textContent='Resume'; $('pause').disabled=true; };
+  $('finish').onclick=()=>{ running=false; clearInterval(tick); if(watch!=null) navigator.geolocation.clearWatch(watch); watch=null;
+    const a=newActivity($('gtype').value, started, moving/1000, trackDistance(pts), elevGain(pts), pts);
+    location.hash='#/activity/'+a.id; };
+  cleanup=()=>{ clearInterval(tick); if(watch!=null) navigator.geolocation.clearWatch(watch); };
+}
+
+function defaultName(type, ts){ const h=new Date(ts).getHours(); const part=h<5?'Night':h<12?'Morning':h<14?'Lunch':h<18?'Afternoon':h<21?'Evening':'Night';
+  return `${part} ${TYPES[type]?.label||'Activity'}`; }
+function newActivity(type, startedAt, movingTime, distance, elev, points, name, notes){
+  const a={ id:uid(), type, startedAt, movingTime, distance, elevGain:elev||0,
+    points, name:name||defaultName(type,startedAt), notes:notes||'', kudos:0, kudosGiven:false, comments:[] };
+  db.activities.push(a); db.activities.sort((x,y)=>y.startedAt-x.startedAt); save(); return a;
+}
+
+// ---------- sample data (synthetic loops around Golden Gate Park) ----------
+function seedSample(){
+  const base=[37.7694,-122.4862]; const now=Date.now();
+  const plan=[[0,'run',5.2],[1,'ride',24],[2,'run',8.1],[4,'walk',3.0],[6,'run',10.0],[8,'ride',40],[9,'weight_training',0],[11,'run',6.4],[13,'hike',7.5],[15,'run',12.0],[17,'ride',32],[19,'run',5.0]];
+  plan.forEach(([daysAgo,type,distKm],i)=>{
+    const start=now-daysAgo*864e5-(7+i%5)*36e5; const t=TYPES[type];
+    const secPerKm={run:330,ride:130,walk:720,hike:600}[type]||300;
+    let pts=[], sec=distKm*secPerKm*(0.9+Math.random()*0.2);
+    if(!t.noGps){ const n=Math.max(40,Math.round(distKm*25)); const r=distKm/(2*Math.PI)/111; const ang0=Math.random()*6.28;
+      for(let j=0;j<=n;j++){ const ang=ang0+j/n*2*Math.PI; const wob=1+0.15*Math.sin(ang*5+i);
+        pts.push([base[0]+r*wob*Math.sin(ang), base[1]+r*wob*Math.cos(ang)/0.79, start+sec*1000*j/n, 20+15*Math.sin(ang*2+i)]); } }
+    else sec=45*60;
+    const a=newActivity(type,start,sec,pts.length?trackDistance(pts):0,elevGain(pts),pts);
+    if(type==='weight_training'){ a.name='Sample Push Day'; a.strength={ program:null, unit:db.units, exercises:[
+      { name:'Barbell Bench Press', sets:[{type:'W',weight:95,reps:8},{type:'N',weight:185,reps:6,rpe:8},{type:'N',weight:185,reps:6,rpe:9},{type:'N',weight:175,reps:8,rpe:9}] },
+      { name:'Seated DB Shoulder Press', sets:[{type:'N',weight:55,reps:10,rpe:9},{type:'N',weight:55,reps:9,rpe:10}] } ], volume:0 };
+      a.strength.volume=a.strength.exercises.reduce((v,e)=>v+e.sets.filter(s=>s.type!=='W').reduce((x,s)=>x+s.weight*s.reps,0),0); }
+    a.kudos=Math.floor(Math.random()*12); if(i%3===0) a.comments.push({who:'Sam',text:'Nice one!',at:start+36e5});
+  });
+  save();
+}
+
+route();
+if('serviceWorker' in navigator && isSecureContext) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>

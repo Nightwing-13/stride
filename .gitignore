@@ -1,0 +1,5 @@
+# Program and recipe content comes from paid PDFs: it lives in private Supabase storage, never in this repo.
+programs-data.js
+recipes-data.js
+*.json
+!manifest.webmanifest

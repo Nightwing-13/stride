@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#111214"/>
+  <!-- stride mark: a forward chevron (cardio, coral) behind a barbell plate stroke (lifting, lime) -->
+  <path d="M120 360 L232 152 L272 152 L160 360 Z" fill="#ff6b4a"/>
+  <path d="M206 360 L318 152 L392 152 L280 360 Z" fill="#c6f135"/>
+  <rect x="120" y="384" width="272" height="18" rx="9" fill="#c6f135" opacity=".35"/>
+</svg>
